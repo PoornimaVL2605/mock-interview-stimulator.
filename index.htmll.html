@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock Interview Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#f2f6f8;--surface:#fff;--ink:#14202b;--muted:#566574;--accent:#0e7c86;--accent-ink:#fff;--line:#d5dee5;--bad:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1a22;--surface:#17252f;--ink:#e8eef2;--muted:#9fb0bc;--accent:#3cc3cf;--accent-ink:#06242a;--line:#2a3d4a;--bad:#ff7b6b}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+h1,h2,h3{margin:0 0 10px;line-height:1.2}
+h3{font-size:1.05rem;margin-top:14px}
+.muted{color:var(--muted)}
+.btn{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);padding:11px 22px;border-radius:6px;font:inherit;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:inherit;border-color:var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);margin-bottom:12px}
+textarea{min-height:170px;resize:vertical}
+label{display:block;font-weight:600;margin-bottom:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:18px}
+.card ul{margin:6px 0 0;padding-left:20px}
+.card li{margin-bottom:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
+.grid .card{margin:0}
+.big{font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1.2}
+.err{color:var(--bad);min-height:1.4em;font-size:.9rem}
+.ok{color:var(--accent);min-height:1.4em;font-size:.9rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.chip{border:1px solid var(--accent);color:var(--accent);padding:2px 12px;border-radius:999px;font-size:.88rem}
+.chip.m{border-color:var(--line);color:var(--muted)}
+details{border-top:1px solid var(--line);padding:12px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0;color:var(--muted);line-height:1.7}
+
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+#auth .card{width:100%;max-width:400px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button{flex:1;padding:8px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{display:flex;align-items:center;gap:14px;height:60px}
+header.top b{margin-right:auto}
+main{padding:26px 0 50px}
+.startrow{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.startrow>div{flex:1;min-width:200px}
+.startrow select{margin:0}
+#chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.hist{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.hist:first-child{border-top:0}
+.hist .sc{font-weight:700;color:var(--accent);min-width:64px}
+.hist .info{flex:1}
+.hist .btn{padding:6px 14px}
+.q,.pq{padding:12px 0;border-top:1px solid var(--line)}
+.q:first-child,.pq:first-child{border-top:0}
+.q .a{font-size:.92rem;color:var(--muted);margin-top:4px}
+.pq .t{color:var(--muted);margin-top:4px}
+
+#interview{background:#0b141a;color:#e8eef2;min-height:100vh;display:flex;flex-direction:column;padding:22px 34px}
+#interview .bar{display:flex;justify-content:space-between;font-weight:600;font-size:1.05rem}
+#interview .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;max-width:900px;margin:0 auto;width:100%}
+.avatar{width:120px;height:120px;border-radius:50%;background:#16313a;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#3cc3cf;border:3px solid #24505c}
+.avatar.speaking{animation:pulse 1.2s infinite;border-color:#3cc3cf}
+.avatar.listening{border-color:#4cd964;box-shadow:0 0 0 8px rgba(76,217,100,.18)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(60,195,207,.5)}100%{box-shadow:0 0 0 24px rgba(60,195,207,0)}}
+@media (prefers-reduced-motion:reduce){.avatar.speaking{animation:none;box-shadow:0 0 0 8px rgba(60,195,207,.25)}}
+#qtext{font-size:clamp(1.3rem,3vw,2rem);font-weight:600;max-width:24em}
+#stat{color:#9fb0bc;min-height:1.6em}
+#live{min-height:4.5em;max-width:40em;color:#cfe3ea;font-size:1.1rem;font-style:italic}
+#interview .btns{display:flex;gap:12px;justify-content:center}
+#interview .btn.ghost{border-color:#2a3d4a}
+#timer.low{color:#ff7b6b}
+#fsgate{position:absolute;inset:0;background:rgba(11,20,26,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="auth">
+<div class="card">
+<h1>Mock Interview Simulator</h1>
+<p class="muted">Sign in to take a voice interview.</p>
+<div class="tabs">
+<button id="tabLogin" class="on" type="button">Log in</button>
+<button id="tabSignup" type="button">Sign up</button>
+</div>
+<div id="nameBox" hidden><label for="aName">Name</label><input id="aName" autocomplete="name"></div>
+<label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email">
+<label for="aPass">Password</label><input id="aPass" type="password" autocomplete="current-password">
+<div class="err" id="aErr" role="alert"></div>
+<button class="btn" id="aGo" type="button" style="width:100%">Log in</button>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash" hidden>
+<header class="top"><div class="wrap"><b>Mock Interview Simulator</b><span id="hello" class="muted"></span><button class="btn ghost" id="logout" type="button">Log out</button></div></header>
+<main><div class="wrap">
+<div class="grid">
+<div class="card"><div class="muted">Interviews taken</div><div class="big" id="sCount">0</div></div>
+<div class="card"><div class="muted">Average score</div><div class="big" id="sAvg">–</div></div>
+<div class="card"><div class="muted">Best score</div><div class="big" id="sBest">–</div></div>
+</div>
+<div class="card">
+<h2>Your resume</h2>
+<p class="muted" id="resStat"></p>
+<button class="btn ghost" id="goRes" type="button">Upload resume</button>
+</div>
+<div class="card">
+<h2>Take an interview</h2>
+<div class="startrow">
+<div><label for="role">Role</label><select id="role"></select></div>
+<button class="btn" id="start" type="button">Start interview</button>
+</div>
+<div class="err" id="sErr" role="alert"></div>
+</div>
+<div class="card">
+<h2>Prepare for your interview</h2>
+<p class="muted">A full guide for your role: rounds, topics, sample answers, company questions and tips.</p>
+<button class="btn ghost" id="goPrep" type="button">Open preparation guide</button>
+</div>
+<div class="card"><h2>Your progress</h2><div id="chart"></div></div>
+<div class="card"><h2>Past interviews</h2><div id="hist"></div></div>
+</div></main>
+</div>
+
+<!-- RESUME -->
+<div id="resumePage" hidden>
+<header class="top"><div class="wrap"><b>Your resume</b><button class="btn" id="resBack" type="button">Back to dashboard</button></div></header>
+<main><div class="wrap">
+<div class="card">
+<h2>Upload your resume</h2>
+<p class="muted">Upload a PDF or TXT file. For a Word file, save it as PDF first, or paste the text below.</p>
+<input type="file" id="rFile" accept=".pdf,.txt">
+<label for="rText">Resume text (check it and edit if needed)</label>
+<textarea id="rText" placeholder="Your resume text appears here, or paste it yourself."></textarea>
+<button class="btn" id="rSave" type="button">Save resume</button>
+<div id="rMsg" role="status"></div>
+</div>
+<div class="card">
+<h2>Resume tips for a role</h2>
+<label for="rsRole">Role</label><select id="rsRole"></select>
+<div id="rsOut"></div>
+</div>
+</div></main>
+</div>
+
+<!-- INTERVIEW (full screen) -->
+<div id="interview" hidden>
+<div class="bar"><span id="progress"></span><span id="timer"></span></div>
+<div class="mid">
+<div class="avatar" id="avatar">AI</div>
+<div id="qtext"></div>
+<div id="stat"></div>
+<div id="live"></div>
+<div class="btns">
+<button class="btn" id="done" type="button">I’m done answering</button>
+<button class="btn ghost" id="end" type="button">End interview</button>
+</div>
+</div>
+<div id="fsgate" hidden>
+<h2>Full screen was closed</h2>
+<p>The interview is paused. Return to full screen to continue this question.</p>
+<div class="btns"><button class="btn" id="resume" type="button">Return to full screen</button><button class="btn ghost" id="quit" type="button">End interview</button></div>
+</div>
+</div>
+
+<!-- PREPARATION -->
+<div id="prep" hidden>
+<header class="top"><div class="wrap"><b>Interview preparation</b><button class="btn" id="prepBack" type="button">Back to dashboard</button></div></header>
+<main><div class="wrap">
+<div class="card"><label for="prepRole">Role</label><select id="prepRole" style="margin:0"></select></div>
+<div id="guideBox"></div>
+<div class="card"><h2>Questions commonly asked at companies</h2>
+<p class="muted">Based on commonly reported interview experiences. Companies change their process, so also check recent experiences on the company’s careers page, Glassdoor or AmbitionBox.</p>
+<div id="prepCo"></div></div>
+<div class="card"><h2>More practice questions and how to answer</h2><div id="prepQs"></div></div>
+<div class="card"><h2>Before the interview</h2><ul id="pBefore"></ul></div>
+<div class="card"><h2>During the interview</h2><ul id="pDuring"></ul></div>
+<div class="card"><h2>Tips for voice interviews</h2><ul id="pVoice"></ul></div>
+</div></main>
+</div>
+
+<!-- REPORT -->
+<div id="report" hidden>
+<header class="top"><div class="wrap"><b>Interview report</b><button class="btn" id="back" type="button">Back to dashboard</button></div></header>
+<main><div class="wrap">
+<div class="card"><div class="muted" id="rMeta"></div><div class="big" id="rScore"></div><p id="rVerdict"></p></div>
+<div class="card"><h2>What to improve</h2><ul id="rImprove"></ul></div>
+<div class="card"><h2>Question by question</h2><div id="rList"></div></div>
+</div></main>
+</div>
+
+<script>
+/* ---------- roles: questions, skills, tips, company questions ---------- */
+const ROLES = {
+  dev:{n:"Software Developer",c:"#8e6bd8",
+    skills:["java","python","c++","javascript","sql","git","data structures","algorithms","oop","api","spring","node.js","docker","linux"],
+    qs:[
+      {q:"What is the difference between an array and a linked list?",kw:["memory","index","insert","delete","pointer","complexity"],t:"Compare memory layout, access time and insertion cost, with a use case for each."},
+      {q:"Explain how a REST API works.",kw:["http","get","post","endpoint","json","stateless"],t:"Mention HTTP methods, endpoints, JSON, status codes and statelessness."},
+      {q:"How do you debug a failing program?",kw:["reproduce","log","test","breakpoint","isolate","fix"],t:"Reproduce the bug, read logs, isolate the cause, fix it, then add a test."},
+      {q:"What is object-oriented programming? Explain its main principles.",kw:["encapsulation","inheritance","polymorphism","abstraction","class","object"],t:"Name the four pillars and give one small example for each."}],
+    tips:["Say your reasoning out loud when solving a problem.","Mention time complexity and edge cases when you explain a solution."],
+    cos:[
+      {n:"Campus hiring at TCS, Infosys, Wipro, Cognizant",qs:["Explain OOP concepts with examples.","What is the difference between SQL and NoSQL?","Tell me about your final-year project."]},
+      {n:"Amazon",qs:["Tell me about a time you disagreed with a teammate and how you resolved it.","Given an array, find two numbers that add up to a target.","Design a URL shortener."]},
+      {n:"Product startups",qs:["Walk me through a project you built end to end.","How would you improve the performance of a slow API?"]}]},
+  web:{n:"Web Developer",c:"#e0a526",
+    skills:["html","css","javascript","react","node.js","typescript","git","responsive","api","bootstrap","tailwind","mongodb","sql"],
+    qs:[
+      {q:"What is the difference between let, const and var in JavaScript?",kw:["scope","block","hoisting","reassign","function","const"],t:"Explain scope, hoisting and reassignment with a tiny example."},
+      {q:"Explain the CSS box model.",kw:["margin","padding","border","content","width","box-sizing"],t:"List the four layers and mention box-sizing."},
+      {q:"How is state different from props in React?",kw:["state","props","component","immutable","rerender","parent"],t:"Props come from the parent and are read-only; state is owned and changed by the component."},
+      {q:"How do you make a website responsive?",kw:["media","flexbox","grid","viewport","mobile","percent"],t:"Mention the viewport tag, media queries, flexbox, grid and relative units."}],
+    tips:["Describe a page you built and how you tested it on mobile.","Be ready to explain one JavaScript concept, such as closures, with a short example."],
+    cos:[
+      {n:"IT services companies",qs:["What is the difference between == and === in JavaScript?","Explain event delegation.","Build a simple responsive navbar."]},
+      {n:"Product companies",qs:["What happens when you type a URL into the browser?","Explain closures in JavaScript.","Write a debounce function."]}]},
+  da:{n:"Data Analyst",c:"#2e9e5b",
+    skills:["sql","excel","power bi","tableau","python","pandas","statistics","dashboard","visualization","etl","data cleaning"],
+    qs:[
+      {q:"What is the difference between WHERE and HAVING in SQL?",kw:["filter","group","aggregate","before","after","rows"],t:"WHERE filters rows before grouping; HAVING filters groups after aggregation."},
+      {q:"Explain the different types of SQL joins.",kw:["inner","left","right","full","match","null"],t:"Describe each join with a two-table example."},
+      {q:"How do you clean a messy dataset?",kw:["missing","duplicate","outlier","format","validate","document"],t:"Handle missing values, duplicates, outliers and formats, then validate and document."},
+      {q:"How would you present insights to a non-technical stakeholder?",kw:["dashboard","simple","story","business","visual","decision"],t:"Lead with the business answer, use simple visuals and end with a recommendation."}],
+    tips:["Describe one dashboard or analysis with the business question and the result.","Practise explaining SQL joins and GROUP BY out loud."],
+    cos:[
+      {n:"Accenture, Deloitte, EY, KPMG",qs:["Explain SQL joins with examples.","How do you handle duplicates in a dataset?","Tell me about a dashboard you built."]},
+      {n:"E-commerce and product companies",qs:["How would you find out why sales dropped last month?","Which metrics would you track for a new feature?"]}]},
+  ds:{n:"Data Scientist",c:"#0e7c86",
+    skills:["python","machine learning","pandas","numpy","scikit-learn","statistics","sql","tensorflow","visualization","regression","classification","nlp"],
+    qs:[
+      {q:"What is the difference between overfitting and underfitting?",kw:["training","test","variance","bias","generalize","regularization"],t:"Overfit means great on training data but poor on new data; mention how to fix it."},
+      {q:"How do you handle missing data?",kw:["impute","mean","median","drop","missing","pattern"],t:"First understand why it is missing, then drop, impute or model it, and explain the trade-offs."},
+      {q:"Explain precision and recall.",kw:["precision","recall","false positive","false negative","trade-off","f1"],t:"Use a simple example such as spam detection and say when each matters more."},
+      {q:"What is the bias-variance trade-off?",kw:["bias","variance","complexity","error","underfit","overfit"],t:"Bias is error from over-simple models; variance is error from over-sensitive ones."}],
+    tips:["For every project, be ready to state the metric you used and why.","Explain each technical idea with a simple example before using jargon."],
+    cos:[
+      {n:"Amazon, Flipkart and other product companies",qs:["Explain the bias-variance trade-off.","How do you handle imbalanced data?","Explain how a decision tree splits."]},
+      {n:"Analytics and consulting firms",qs:["Walk me through a machine learning project end to end.","How do you explain model results to a manager?"]}]},
+  ml:{n:"ML / AI Engineer",c:"#d6568a",
+    skills:["python","pytorch","tensorflow","deep learning","neural network","nlp","computer vision","llm","mlops","docker","scikit-learn","transformers"],
+    qs:[
+      {q:"How does backpropagation work?",kw:["gradient","loss","weights","chain rule","layers","update"],t:"Forward pass, compute loss, push gradients back with the chain rule, update weights."},
+      {q:"What is the difference between supervised and unsupervised learning?",kw:["labeled","clustering","classification","regression","unlabeled","example"],t:"Contrast labeled and unlabeled data, with one example each."},
+      {q:"How would you deploy a machine learning model?",kw:["api","docker","monitor","version","latency","retrain"],t:"Wrap it in an API, containerise it, version it, monitor it and plan retraining."},
+      {q:"What is overfitting and how do you reduce it?",kw:["dropout","regularization","validation","data","early stopping","generalize"],t:"Mention more data, regularization, dropout, early stopping and validation."}],
+    tips:["Be ready to explain one model you trained: data, architecture, metric and result.","Mention how you would deploy and monitor a model, not only train it."],
+    cos:[
+      {n:"AI startups and product companies",qs:["Explain how a transformer works at a high level.","How would you evaluate an LLM-based feature?","How do you deploy and monitor a model?"]},
+      {n:"Large tech companies",qs:["Explain gradient descent.","Design a recommendation system."]}]},
+  qa:{n:"Software Tester (QA)",c:"#e07b39",
+    skills:["manual testing","selenium","test cases","automation","jira","sql","api testing","postman","agile","bug","regression","java"],
+    qs:[
+      {q:"What is the difference between verification and validation?",kw:["building","right","product","requirements","review","testing"],t:"Verification checks we build the product right; validation checks we build the right product."},
+      {q:"How do you write a good bug report?",kw:["steps","expected","actual","severity","screenshot","environment"],t:"Include clear steps, expected and actual result, severity, environment and evidence."},
+      {q:"What is regression testing and when do you do it?",kw:["existing","change","automation","release","features","retest"],t:"Re-testing existing features after a change; mention automation."},
+      {q:"What is the difference between smoke and sanity testing?",kw:["build","stable","basic","narrow","critical","quick"],t:"Smoke checks a new build is stable; sanity checks a specific fix or change."}],
+    tips:["Prepare to write test cases for a simple feature, such as a login page, on the spot.","Explain how you decide what to automate and what to test manually."],
+    cos:[
+      {n:"IT services companies",qs:["Explain the software testing life cycle.","What is the difference between severity and priority?","Write test cases for a login page."]},
+      {n:"Product companies",qs:["How do you decide what to automate?","How would you test an ATM or a lift?"]}]},
+  ops:{n:"Cloud / DevOps Engineer",c:"#4a7bd0",
+    skills:["aws","azure","docker","kubernetes","linux","ci/cd","jenkins","terraform","git","ansible","monitoring","python","bash"],
+    qs:[
+      {q:"What is CI/CD and why is it useful?",kw:["integration","delivery","automate","pipeline","test","deploy"],t:"Automating build, test and deployment so releases are faster and safer."},
+      {q:"What is the difference between a container and a virtual machine?",kw:["kernel","isolated","lightweight","hypervisor","image","resources"],t:"Containers share the host kernel and are lightweight; VMs run a full OS on a hypervisor."},
+      {q:"How would you troubleshoot a slow server?",kw:["cpu","memory","logs","disk","network","monitor"],t:"Check CPU, memory, disk, network and logs in a clear order."},
+      {q:"What is infrastructure as code?",kw:["terraform","versioned","repeatable","template","automate","environment"],t:"Managing infrastructure with versioned, repeatable code such as Terraform."}],
+    tips:["Describe a pipeline or deployment you set up, step by step.","Mention monitoring and rollback when you talk about deployments."],
+    cos:[
+      {n:"IT services and cloud partners",qs:["Explain Docker images and containers.","What is the difference between a Kubernetes pod and a deployment?","Explain a CI/CD pipeline you built."]},
+      {n:"Startups",qs:["How would you set up zero-downtime deployment?","What do you monitor in production?"]}]},
+  hr:{n:"HR",c:"#c0455a",
+    skills:["communication","leadership","teamwork","recruitment","onboarding","excel","payroll","hris","engagement","training","interviewing","policy"],
+    qs:[
+      {q:"Describe a time you handled a conflict in a team.",kw:["listened","communicat","solution","result","team","understand"],t:"Use STAR: situation, task, action, result. Focus on listening and a fair solution."},
+      {q:"What is your biggest weakness, and how are you working on it?",kw:["weakness","improve","feedback","learn","practice","progress"],t:"Pick a real, fixable weakness and explain what you are doing about it."},
+      {q:"How would you handle an employee who is consistently late?",kw:["conversation","understand","policy","document","support","improve"],t:"Talk privately, understand the reason, restate policy, document it and follow up."},
+      {q:"How do you screen candidates for a role?",kw:["job description","resume","skills","interview","culture","shortlist"],t:"Start from the job description, shortlist on skills, then interview for skills and fit."}],
+    tips:["Prepare three STAR stories you can reuse: teamwork, conflict and a mistake you learned from.","Show that you understand both the employee and the business side of HR."],
+    cos:[
+      {n:"TCS, Infosys, Wipro, Accenture",qs:["Are you comfortable with relocation and shifts?","Why do you want to join our company?","Where do you see yourself in five years?"]},
+      {n:"HR roles in general",qs:["How do you handle a conflict between two employees?","How do you measure employee engagement?"]}]}
+};
+const GENERAL = {
+  before:["Research the company, the role and its main technologies or values.","Prepare 5 to 6 stories from projects and studies, each with a situation, your action and a result.","Test your microphone, internet and a quiet space the day before."],
+  during:["Pause for two seconds, then start with your main point.","Use the STAR method for experience questions and add numbers where you can.","If you do not know something, say how you would find the answer. Do not bluff."],
+  voice:["Speak clearly at a steady pace and avoid filler words like “um”.","Answer for about 45 to 90 seconds, roughly 60 to 150 words.","Use headphones in a quiet room and finish with a clear closing sentence."]
+};
+const ACKS = ["Thank you. Let’s move on.","Okay, noted.","Thanks for that answer.","Alright, next question."];
+const TIME_LIMIT = 90, FOLLOW_TIME = 45, SILENCE_MS = 2500;
+
+const $ = id => document.getElementById(id);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; };
+const shuffle = a => a.slice().sort(() => Math.random() - 0.5);
+["role","rsRole","prepRole"].forEach(id => {
+  Object.keys(ROLES).forEach(k => { const o = el("option", ROLES[k].n); o.value = k; $(id).appendChild(o); });
+});
+
+/* ---------- storage ---------- */
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+async function hash(s){
+  try {
+    const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,"0")).join("");
+  } catch(e){ return btoa(unescape(encodeURIComponent(s))); }
+}
+let me = null;
+function show(id){
+  ["auth","dash","resumePage","interview","report","prep"].forEach(v => $(v).hidden = v !== id);
+  window.scrollTo(0, 0);
+}
+
+/* ---------- auth ---------- */
+let signup = false;
+function setMode(s){
+  signup = s;
+  $("tabLogin").classList.toggle("on", !s);
+  $("tabSignup").classList.toggle("on", s);
+  $("nameBox").hidden = !s;
+  $("aGo").textContent = s ? "Create account" : "Log in";
+  $("aErr").textContent = "";
+}
+$("tabLogin").onclick = () => setMode(false);
+$("tabSignup").onclick = () => setMode(true);
+async function authGo(){
+  const email = $("aEmail").value.trim().toLowerCase(), pass = $("aPass").value, name = $("aName").value.trim();
+  const err = $("aErr");
+  if (!/^\S+@\S+\.\S+$/.test(email)) { err.textContent = "Enter a valid email address."; return; }
+  if (pass.length < 6) { err.textContent = "Password must be at least 6 characters."; return; }
+  const users = store.get("mis_users", {});
+  const h = await hash(pass);
+  if (signup){
+    if (!name) { err.textContent = "Enter your name."; return; }
+    if (users[email]) { err.textContent = "An account with this email already exists. Log in instead."; return; }
+    users[email] = {name, h};
+    store.set("mis_users", users);
+  } else if (!users[email] || users[email].h !== h) { err.textContent = "Email or password is incorrect."; return; }
+  me = {email, name: users[email].name};
+  store.set("mis_session", me);
+  $("aPass").value = "";
+  openDash();
+}
+$("aGo").onclick = authGo;
+$("aPass").addEventListener("keydown", e => { if (e.key === "Enter") authGo(); });
+$("logout").onclick = () => { store.set("mis_session", null); me = null; show("auth"); };
+
+/* ---------- resume ---------- */
+const ivKey = () => "mis_iv_" + me.email;
+const resKey = () => "mis_res_" + me.email;
+const getIvs = () => store.get(ivKey(), []);
+const getRes = () => store.get(resKey(), null);
+
+function analyze(text, roleId){
+  const R = ROLES[roleId], l = text.toLowerCase();
+  const has = s => new RegExp("(^|[^a-z0-9+#.])" + s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "($|[^a-z0-9+#])").test(l);
+  const found = R.skills.filter(has), missing = R.skills.filter(s => !has(s));
+  const words = text.trim().split(/\s+/).length;
+  const sec = {
+    projects: /project/.test(l),
+    experience: /experience|intern|employment|work history/.test(l),
+    skills: /skills|technologies|tools/.test(l),
+    certs: /certif|course|nptel|coursera|udemy/.test(l)
+  };
+  const email = /\S+@\S+\.\S+/.test(text), phone = /\d[\d\s-]{8,}\d/.test(text), link = /linkedin|github/.test(l);
+  const metric = /\d+\s?%|\d+\+|\b\d{2,}\s?(users|customers|records|rows|students|requests|hours|projects|candidates)/.test(l);
+  const tips = [];
+  if (words < 150) tips.push("Your resume looks short (about " + words + " words). Add details about projects, internships and tools you used.");
+  if (words > 900) tips.push("Your resume is long. Keep it to one page for freshers, two pages at most.");
+  if (found.length < 3) tips.push("Only " + found.length + " key skill(s) for a " + R.n + " role were found. If you truly know them, add skills such as: " + missing.slice(0, 5).join(", ") + ".");
+  else {
+    tips.push("Skills that match this role: " + found.join(", ") + ". Be ready to explain each one with an example.");
+    if (missing.length) tips.push("Consider learning, or adding if you already know: " + missing.slice(0, 4).join(", ") + ".");
+  }
+  if (!sec.projects) tips.push("Add a Projects section with 2 or 3 projects: the problem, the tools and the result.");
+  if (!sec.experience) tips.push("Add internships, training or volunteer work under an Experience section.");
+  if (!sec.skills) tips.push("Add a clear Skills section near the top.");
+  if (!sec.certs) tips.push("Add relevant courses or certifications.");
+  if (!metric) tips.push("Add numbers to show impact, for example “reduced load time by 30%”.");
+  if (!email || !phone) tips.push("Add your email and phone number at the top.");
+  if (!link) tips.push("Add a LinkedIn or GitHub link.");
+  return {found, missing, words, tips};
+}
+
+function rmsg(text, bad){ const m = $("rMsg"); m.textContent = text; m.className = bad ? "err" : "ok"; }
+async function readPdf(file){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await file.arrayBuffer())}).promise;
+  let t = "";
+  for (let i = 1; i <= pdf.numPages; i++){
+    const c = await (await pdf.getPage(i)).getTextContent();
+    t += c.items.map(x => x.str).join(" ") + "\n";
+  }
+  return t;
+}
+$("rFile").onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  rmsg("Reading file…");
+  try {
+    const n = f.name.toLowerCase();
+    let t = "";
+    if (n.endsWith(".pdf")){ if (typeof pdfjsLib === "undefined") throw new Error("no pdfjs"); t = await readPdf(f); }
+    else if (n.endsWith(".txt")) t = await f.text();
+    else { rmsg("Upload a PDF or TXT file, or paste your resume text.", true); return; }
+    t = t.trim();
+    if (t.length < 50){ rmsg("Could not read text from this file. Paste your resume text below.", true); return; }
+    $("rText").value = t;
+    $("rText").dataset.name = f.name;
+    rmsg("Text read from " + f.name + ". Check it, then click Save resume.");
+  } catch(err){ rmsg("Could not read this file. Paste your resume text below.", true); }
+};
+$("rSave").onclick = () => {
+  const t = $("rText").value.trim();
+  if (t.length < 50){ rmsg("Resume text is too short. Upload a file or paste your full resume.", true); return; }
+  store.set(resKey(), {text: t, name: $("rText").dataset.name || "Pasted resume", ts: Date.now()});
+  rmsg("Resume saved. Interview questions will now be based on it.");
+  drawAnalysis();
+};
+function chips(items, muted){
+  const w = el("div", null, "chips");
+  items.forEach(s => w.appendChild(el("span", s, "chip" + (muted ? " m" : ""))));
+  return w;
+}
+function drawAnalysis(){
+  const out = $("rsOut"); out.innerHTML = "";
+  const rs = getRes();
+  if (!rs){ out.appendChild(el("p", "Save your resume to see tips for this role.", "muted")); return; }
+  const a = analyze(rs.text, $("rsRole").value);
+  out.appendChild(el("h3", "Skills found for this role"));
+  out.appendChild(a.found.length ? chips(a.found) : el("p", "None found yet.", "muted"));
+  out.appendChild(el("h3", "Skills to consider"));
+  out.appendChild(chips(a.missing.slice(0, 8), true));
+  out.appendChild(el("h3", "Tips for your resume"));
+  const ul = el("ul");
+  a.tips.forEach(t => ul.appendChild(el("li", t)));
+  out.appendChild(ul);
+}
+function openResume(){
+  const rs = getRes();
+  $("rText").value = rs ? rs.text : "";
+  $("rText").dataset.name = rs ? rs.name : "";
+  $("rsRole").value = $("role").value;
+  rmsg("");
+  drawAnalysis();
+  show("resumePage");
+}
+$("goRes").onclick = openResume;
+$("resBack").onclick = openDash;
+$("rsRole").onchange = drawAnalysis;
+
+/* ---------- dashboard ---------- */
+function openDash(){
+  $("hello").textContent = "Hi, " + me.name;
+  const rs = getRes();
+  $("resStat").textContent = rs ? "Saved: " + rs.name + " (" + new Date(rs.ts).toLocaleDateString() + ")" : "Step 1: upload your resume. Your interview questions are based on it.";
+  $("goRes").textContent = rs ? "Update resume" : "Upload resume";
+  $("sErr").textContent = SR ? (rs ? "" : "Upload your resume first.") : "Voice interviews need Chrome or Edge. Open this page in one of them.";
+  $("start").disabled = !SR;
+  const ivs = getIvs();
+  $("sCount").textContent = ivs.length;
+  $("sAvg").textContent = ivs.length ? (ivs.reduce((a,r) => a + r.avg, 0) / ivs.length).toFixed(1) : "–";
+  $("sBest").textContent = ivs.length ? Math.max(...ivs.map(r => r.avg)).toFixed(1) : "–";
+  drawChart(ivs);
+  drawHistory(ivs);
+  show("dash");
+}
+function drawChart(ivs){
+  const box = $("chart");
+  if (!ivs.length){ box.innerHTML = "<p class='muted'>No interviews yet. Take your first one to see your progress here.</p>"; return; }
+  const W = 640, H = 240, L = 36, R = 16, T = 14, B = 34;
+  const xs = i => ivs.length === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (ivs.length - 1);
+  const ys = v => T + (10 - v) * (H - T - B) / 10;
+  let s = "<svg viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Interview scores over time'>";
+  [0,5,10].forEach(v => {
+    s += "<line x1='" + L + "' x2='" + (W - R) + "' y1='" + ys(v) + "' y2='" + ys(v) + "' stroke='currentColor' opacity='.15'/>";
+    s += "<text x='" + (L - 8) + "' y='" + (ys(v) + 4) + "' text-anchor='end' font-size='11' fill='currentColor' opacity='.6'>" + v + "</text>";
+  });
+  if (ivs.length > 1) s += "<polyline points='" + ivs.map((r, i) => xs(i) + "," + ys(r.avg)).join(" ") + "' fill='none' stroke='currentColor' opacity='.4' stroke-width='2'/>";
+  ivs.forEach((r, i) => {
+    const R2 = ROLES[r.role] || ROLES.dev;
+    s += "<circle cx='" + xs(i) + "' cy='" + ys(r.avg) + "' r='6' fill='" + R2.c + "'><title>#" + (i+1) + " " + R2.n + ": " + r.avg.toFixed(1) + "/10</title></circle>";
+    s += "<text x='" + xs(i) + "' y='" + (H - 12) + "' text-anchor='middle' font-size='11' fill='currentColor' opacity='.6'>#" + (i+1) + "</text>";
+  });
+  const used = [...new Set(ivs.map(r => r.role))].filter(k => ROLES[k]);
+  s += "</svg><div class='legend'>" + used.map(k => "<span><i style='background:" + ROLES[k].c + "'></i>" + ROLES[k].n + "</span>").join("") + "<span>Scores out of 10</span></div>";
+  box.innerHTML = s;
+}
+function drawHistory(ivs){
+  const box = $("hist");
+  box.innerHTML = "";
+  if (!ivs.length){ box.innerHTML = "<p class='muted'>Your completed interviews will appear here.</p>"; return; }
+  ivs.slice().reverse().forEach(r => {
+    const d = el("div", null, "hist");
+    d.innerHTML = "<div class='sc'></div><div class='info'><b></b><div class='muted'></div></div>";
+    d.querySelector(".sc").textContent = r.avg.toFixed(1) + " / 10";
+    d.querySelector("b").textContent = (ROLES[r.role] || ROLES.dev).n + " interview";
+    d.querySelector(".muted").textContent = new Date(r.ts).toLocaleString();
+    const b = el("button", "View report", "btn ghost");
+    b.type = "button";
+    b.onclick = () => showReport(r);
+    d.appendChild(b);
+    box.appendChild(d);
+  });
+}
+
+/* ---------- detailed guide content ---------- */
+const GUIDE = {
+  dev:{
+    rounds:["Online test: aptitude plus 1 to 3 coding problems, usually timed.","Technical interview: data structures, OOP, SQL and a deep dive into your projects.","Managerial round: teamwork, handling pressure, ownership of your work.","HR round: why this company, salary expectations, relocation and joining date."],
+    topics:["Arrays, strings and hashing","Linked lists, stacks and queues","Trees and graphs (basics)","Sorting, searching and Big O","OOP: encapsulation, inheritance, polymorphism, abstraction","SQL: joins, GROUP BY, subqueries","Git: commit, branch, merge","One programming language in depth"],
+    qa:[
+      {q:"What is the difference between an array and a linked list?",a:"An array stores elements in continuous memory, so I can reach any element by index in constant time. But inserting or deleting in the middle is slow because elements must shift. A linked list stores nodes connected by pointers, so insertion and deletion are quick once I have the node, but reaching the nth element takes linear time. I use arrays when I need fast access and linked lists when I insert and delete often."},
+      {q:"Explain how a REST API works.",a:"A REST API lets a client talk to a server over HTTP. Each resource, like a user or an order, has a URL. The client uses GET to read, POST to create, PUT or PATCH to update and DELETE to remove. The server replies with data, usually JSON, and a status code such as 200 or 404. It is stateless, so every request carries all the information the server needs."},
+      {q:"How do you debug a failing program?",a:"First I reproduce the problem so I know exactly when it happens. Then I read the error message and logs. I narrow down the cause by isolating the part of the code responsible, using breakpoints or print statements. After I fix it, I add a test so the bug does not return. In my last project, a login bug turned out to be an empty-string check that I found this way."},
+      {q:"Explain the four principles of OOP.",a:"Encapsulation means keeping data and the methods that use it together and hiding the internals, like a private balance in a bank account class. Inheritance lets a class reuse another’s behaviour, such as Car extending Vehicle. Polymorphism means one method name behaves differently for different objects. Abstraction means exposing only what is needed and hiding the complexity."},
+      {q:"What is time complexity? Give an example.",a:"Time complexity describes how the running time of an algorithm grows as the input grows, written in Big O. Linear search is O(n) because in the worst case it checks every element. Binary search on a sorted list is O(log n) because it halves the search space each step. For a million items, that is about twenty steps instead of a million."}
+    ]},
+  web:{
+    rounds:["Machine test or take-home task: build a small page or component.","Technical interview: JavaScript, CSS, React or your framework, and your projects.","Managerial or design discussion: how you structure and test a feature.","HR round: culture fit, salary and joining date."],
+    topics:["Semantic HTML and accessibility basics","CSS: box model, flexbox, grid, media queries","JavaScript: scope, closures, promises, async/await","DOM and events, including event delegation","React: components, props, state, hooks","Fetching data from APIs","Git and deployment basics","Browser dev tools for debugging"],
+    qa:[
+      {q:"What is the difference between let, const and var?",a:"var is function-scoped and gets hoisted, which can cause confusing bugs. let and const are block-scoped. let can be reassigned, while const cannot be reassigned, though an object stored in a const can still change inside. In my code I use const by default and let only when the value must change, and I avoid var."},
+      {q:"Explain the CSS box model.",a:"Every element is a box made of content, padding, border and margin, from the inside out. By default the width only covers the content, so padding and border add to the total size. Setting box-sizing: border-box makes width include padding and border, which makes layouts much easier to control."},
+      {q:"What is the difference between state and props in React?",a:"Props are inputs passed from a parent component and are read-only for the child. State is data owned by a component that can change over time, and changing it re-renders the component. For example, a button’s label is a prop, while whether a menu is open is state."},
+      {q:"How do you make a website responsive?",a:"I add the viewport meta tag, design mobile-first, and use relative units like percentages and rem. I use flexbox or grid for layout and media queries to adjust at breakpoints. Then I test on real phones and in the browser’s device mode."},
+      {q:"What is a closure in JavaScript?",a:"A closure is a function that remembers the variables from the place where it was created, even after that outer function has finished. For example, a counter function can return an inner function that increases a private count variable. Closures are useful for private data and callbacks."}
+    ]},
+  da:{
+    rounds:["Aptitude or SQL and Excel test.","Technical interview: SQL, statistics, Excel, a BI tool and your projects.","Case or business round: find the reason behind a drop in a metric.","HR round: communication, culture fit, salary."],
+    topics:["SQL: joins, GROUP BY, HAVING, window functions","Excel: pivot tables, VLOOKUP or XLOOKUP, charts","Power BI or Tableau dashboards","Statistics: mean, median, standard deviation, correlation","Data cleaning: missing values, duplicates, outliers","A/B testing basics","Key business metrics (conversion, retention, revenue)","Telling a story with data"],
+    qa:[
+      {q:"What is the difference between WHERE and HAVING?",a:"WHERE filters individual rows before any grouping happens. HAVING filters groups after aggregation. So to find customers with more than five orders, I group by customer and use HAVING COUNT(*) > 5, while WHERE is for conditions like orders placed after a certain date."},
+      {q:"Explain the different types of SQL joins.",a:"An inner join returns only rows that match in both tables. A left join returns all rows from the left table plus matches from the right, with nulls where there is no match. A right join is the reverse, and a full join returns everything from both. For example, a left join of customers with orders shows customers who have never ordered."},
+      {q:"How do you clean a messy dataset?",a:"I start by profiling the data: counts, types, missing values and duplicates. Then I remove duplicates, fix formats like dates and text case, and handle missing values by dropping or filling them depending on why they are missing. I check outliers to see if they are errors or real, validate the result against the source, and document every step."},
+      {q:"Sales dropped 10% last month. How would you investigate?",a:"First I confirm the drop is real and not a data issue. Then I break it down by region, product, channel and customer type to find where it comes from. I compare with the same period last year to rule out seasonality, and check for events such as price changes or outages. Finally I present the finding with a chart and a recommended action."},
+      {q:"How would you present insights to a non-technical manager?",a:"I start with the business answer in one sentence, then support it with one or two simple visuals rather than raw tables. I avoid jargon, explain what the numbers mean for a decision, and end with a clear recommendation and next step."}
+    ]},
+  ds:{
+    rounds:["Online test: aptitude, Python or SQL, and ML basics.","Technical interview: statistics, machine learning, and a deep dive into your projects.","Case round: design an approach for a business problem.","HR and managerial round."],
+    topics:["Python, pandas and NumPy","Statistics: distributions, hypothesis testing, p-values","Regression, classification and clustering","Evaluation metrics: accuracy, precision, recall, F1, ROC-AUC","Overfitting, regularization and cross-validation","Feature engineering and handling imbalanced data","SQL","Explaining your project end to end"],
+    qa:[
+      {q:"What is the difference between overfitting and underfitting?",a:"Overfitting means the model learns the training data too well, including noise, so it does great on training data but poorly on new data. Underfitting means the model is too simple to capture the pattern, so it does badly on both. To reduce overfitting I use more data, regularization, cross-validation or a simpler model. To fix underfitting I use a more flexible model or better features."},
+      {q:"How do you handle missing data?",a:"First I find out why it is missing, because that decides the fix. If very little is missing, I may drop those rows. Otherwise I impute with the mean or median for numbers and the most common value for categories, or use a model-based method. For some problems, I add a flag column showing the value was missing."},
+      {q:"Explain precision and recall.",a:"Precision is the share of predicted positives that are truly positive. Recall is the share of actual positives that the model found. In spam detection, high precision means few good emails are marked as spam. In cancer screening, recall matters more because missing a real case is costly. F1 combines both into one number."},
+      {q:"What is the bias-variance trade-off?",a:"Bias is the error from a model that is too simple and misses the pattern. Variance is the error from a model that is too sensitive to the training data. Making a model more complex lowers bias but raises variance. The goal is the sweet spot where total error on new data is lowest, which I find with validation."},
+      {q:"How do you handle imbalanced data?",a:"I do not trust accuracy there, so I use precision, recall, F1 or PR-AUC. I can resample, by oversampling the small class with a method like SMOTE or undersampling the large class, use class weights in the model, or adjust the decision threshold."}
+    ]},
+  ml:{
+    rounds:["Coding test: Python and sometimes data structures.","ML fundamentals interview: models, math intuition and metrics.","Project deep dive: data, architecture, results, deployment.","System design for an ML feature, then HR."],
+    topics:["Linear algebra, probability and gradient descent","Neural networks and backpropagation","CNNs, RNNs and transformers (high level)","PyTorch or TensorFlow basics","Training problems: overfitting, vanishing gradients","Evaluation metrics and validation","Deployment: APIs, Docker, monitoring, retraining","How LLMs and embeddings are used"],
+    qa:[
+      {q:"How does backpropagation work?",a:"First, the forward pass runs the input through the network to get a prediction, and a loss function measures the error. Then backpropagation uses the chain rule to compute how much each weight contributed to that loss, moving from the last layer back to the first. An optimizer such as gradient descent then updates each weight a small step in the direction that reduces the loss. This repeats over many batches."},
+      {q:"Supervised versus unsupervised learning?",a:"Supervised learning uses labeled data, so the model learns to predict a known output, for example classifying emails as spam or predicting house prices. Unsupervised learning has no labels, so the model finds structure on its own, like grouping customers into clusters. There is also reinforcement learning, where an agent learns from rewards."},
+      {q:"How would you deploy a machine learning model?",a:"I save the trained model with its version, wrap it in an API using something like FastAPI, and package it in a Docker container. I deploy it to a cloud service, add logging and monitoring for latency and prediction quality, and watch for data drift. Then I set up a process to retrain and redeploy when performance drops."},
+      {q:"How do you reduce overfitting in a neural network?",a:"I get more or augmented data, add dropout, use weight decay or L2 regularization, and apply early stopping based on validation loss. I can also reduce the size of the network. I always monitor the gap between training and validation performance."},
+      {q:"What is a transformer?",a:"A transformer is a neural network architecture that uses self-attention, which lets every word in a sequence look at every other word to decide what matters. Unlike RNNs it processes the whole sequence in parallel, so it trains faster and handles long context better. It is the basis of models like BERT and GPT."}
+    ]},
+  qa:{
+    rounds:["Written test: testing concepts and sometimes writing test cases.","Technical interview: manual testing, SQL, API testing and automation basics.","Scenario round: how would you test a given product?","HR round."],
+    topics:["Software testing life cycle and test levels","Test case design: boundary values, equivalence partitioning","Bug life cycle and writing bug reports","Smoke, sanity, regression and retesting","API testing with Postman","Selenium basics and one language","SQL basics for checking data","Agile and Scrum"],
+    qa:[
+      {q:"What is the difference between verification and validation?",a:"Verification asks whether we are building the product right: reviews, walkthroughs and checking against the requirements, without running the code. Validation asks whether we are building the right product: running the software and checking that it meets the user’s real needs. Verification happens earlier, validation later."},
+      {q:"How do you write a good bug report?",a:"A good report has a clear title, the exact steps to reproduce, the expected result and the actual result. I add the environment, such as browser and version, the severity and priority, and a screenshot or video. It should let a developer reproduce the bug without asking me anything."},
+      {q:"What is regression testing?",a:"Regression testing means re-running existing tests after a code change to make sure old features still work. Because it is repeated often, it is the best candidate for automation. I run it before every release, focusing on areas related to the change."},
+      {q:"What is the difference between smoke and sanity testing?",a:"Smoke testing is a quick, broad check on a new build to see whether the main functions work and it is stable enough to test further. Sanity testing is a narrow check after a small change or bug fix, to confirm that specific change works. Smoke comes first."},
+      {q:"Write test cases for a login page.",a:"Positive: valid username and password logs in. Negative: wrong password, wrong username, empty fields and a locked account all show clear errors. Boundary: minimum and maximum password length. Others: the password is masked, the forgot password link works, Enter submits the form, and the page works on mobile. I would also check for SQL injection and session timeout."}
+    ]},
+  ops:{
+    rounds:["Online test: Linux, networking and cloud basics.","Technical interview: Linux, Docker, CI/CD, a cloud platform and your projects.","Scenario round: troubleshoot a failing deployment or slow server.","HR round."],
+    topics:["Linux commands and shell scripting","Networking: DNS, HTTP, ports, load balancers","Docker: images, containers, volumes","CI/CD with Jenkins or GitHub Actions","Cloud basics: AWS or Azure compute, storage, networking, IAM","Terraform and infrastructure as code","Kubernetes basics","Monitoring, logging and incident handling"],
+    qa:[
+      {q:"What is CI/CD and why is it useful?",a:"Continuous integration means developers merge code often and every merge automatically builds and runs tests. Continuous delivery or deployment then releases the tested code automatically. It catches bugs early, makes releases small and frequent, and removes manual steps that cause mistakes."},
+      {q:"Container versus virtual machine?",a:"A virtual machine runs a full guest operating system on top of a hypervisor, so it is heavier and slower to start. A container shares the host’s kernel and only packages the app and its dependencies, so it starts in seconds and uses fewer resources. VMs give stronger isolation; containers give speed and portability."},
+      {q:"How would you troubleshoot a slow server?",a:"I check in order: CPU, memory, disk and network usage using tools like top and iostat, then look at application and system logs for errors. I check recent deployments or changes, and whether a dependency like the database is slow. Once I find the bottleneck I fix or scale it, and add an alert so we catch it earlier next time."},
+      {q:"What is infrastructure as code?",a:"It means defining servers, networks and other infrastructure in code files, such as Terraform, instead of clicking in a console. The code is stored in version control, so environments are repeatable, reviewable and easy to rebuild or roll back."},
+      {q:"Docker image versus container?",a:"An image is a read-only template that contains the app, its libraries and settings. A container is a running instance of an image. You can start many containers from one image, like many objects from one class."}
+    ]},
+  hr:{
+    rounds:["Screening call or written test.","Interview with the HR manager: situational and behavioural questions.","Case or role-play: handling a conflict or running a hiring process.","Final round with a senior leader."],
+    topics:["Recruitment cycle: sourcing, screening, interviewing, offer, onboarding","Labour laws and company policy basics","Payroll and HR software such as HRIS","Employee engagement and retention","Performance appraisal methods","Conflict handling and grievance process","Training and development","Excel and HR metrics like attrition rate"],
+    qa:[
+      {q:"Describe a time you handled a conflict in a team.",a:"In a college project, two teammates disagreed about the approach and work slowed down. I spoke to each separately to understand their view, then brought them together and focused the talk on the project goal. We agreed to test both ideas quickly and choose using results. We finished on time and both felt heard."},
+      {q:"What is your biggest weakness?",a:"I used to take on too much myself instead of delegating. I noticed it when a deadline was nearly missed. Since then I plan tasks at the start, share work based on strengths and check in regularly. My last team project ran much more smoothly."},
+      {q:"How would you handle an employee who is consistently late?",a:"I would first talk to the employee privately and listen, because there may be a genuine reason such as transport or health. I would restate the policy and expectations, agree on a clear improvement plan and document the conversation. If it continues, I would follow the formal process step by step."},
+      {q:"How do you screen candidates for a role?",a:"I start with the job description and agree the must-have skills with the hiring manager. I shortlist resumes against those, do a short phone screening for communication and expectations, and then pass strong candidates to technical interviews. I keep notes so decisions are fair and consistent."},
+      {q:"How do you measure employee engagement?",a:"I use regular anonymous surveys, one-to-one conversations and exit interviews, and look at data like attrition, absenteeism and participation. Then I share the results and act on the top issues, because surveys without action reduce trust."}
+    ]}
+};
+const UNI = {
+  qa:[
+    {q:"Tell me about yourself.",a:"I’m [name], a [degree] graduate from [college]. During my studies I built [project] using [skills], which taught me [lesson]. I also [internship or achievement]. I’m now looking for a [role] position where I can use these skills and keep learning, and your company’s work on [area] interests me a lot."},
+    {q:"Why should we hire you?",a:"I have the core skills this role needs: [skill 1] and [skill 2], which I used in [project] to [result]. I learn quickly, I work well in a team, and I take ownership of my tasks. I would bring both the skills and the attitude to grow with your team."},
+    {q:"Why do you want to work for our company?",a:"I’ve read about [product or work], and I like [specific thing, such as its culture, product or scale]. The role lets me use [skill] on real problems, and I believe the company is a place where I can learn from experienced people and contribute from the start."},
+    {q:"What are your strengths?",a:"My main strengths are [strength 1] and [strength 2]. For example, in [situation], I [action] and the result was [result]. I try to back every strength with a real example."},
+    {q:"Where do you see yourself in five years?",a:"In five years I want to be a strong contributor in this field, who has taken on bigger responsibilities and maybe guides new team members. I plan to keep learning, and I’d like to grow with this company as I do."},
+    {q:"Why are you leaving your current job, or why did you take a gap?",a:"Be honest and positive. For example: I’m looking for a role with more responsibility and learning, and this position fits that. For a gap: I used the time to [course, project or family reason] and I’m now fully ready to work."}
+  ],
+  star:["Situation: set the scene in one or two sentences.","Task: say what you were responsible for.","Action: explain what you did, using “I”. This is the longest part.","Result: finish with the outcome, ideally with a number, and what you learned."],
+  starEx:"Situation: In my final-year project, our team’s model accuracy was stuck at 70% a week before the demo. Task: I was responsible for improving the data pipeline. Action: I checked the data and found duplicates and missing values, cleaned them, and added two new features. Result: accuracy rose to 84% and we presented on time. I learned to check data quality before changing the model.",
+  ask:["What does a typical day look like for someone in this role?","What would success look like in the first three months?","What training or learning opportunities does the team offer?","What are the biggest challenges the team is facing right now?","What are the next steps in the hiring process?"],
+  dos:["Arrive five minutes early and keep your resume and a glass of water nearby.","Answer the question that was asked, then stop.","Use real examples from your projects, internships and studies.","Be honest about what you do not know, and say how you would learn it.","Thank the interviewer at the end."],
+  donts:["Do not memorise answers word for word. It sounds robotic.","Do not claim skills you cannot explain. Everything on your resume can be asked about.","Do not speak negatively about past teachers, teams or employers.","Do not give one-word answers or ramble for several minutes.","Do not ask about salary or leave in the first round unless they raise it."],
+  day:["Re-read your resume and be ready to explain every line.","Check your internet, microphone and camera, and close other tabs.","Sit in a quiet, well-lit place and keep water nearby.","Keep a notepad for the question you want to ask them.","Sleep well. A rested mind answers better than extra revision."]
+};
+
+function drawGuide(){
+  const id = $("prepRole").value, G = GUIDE[id], box = $("guideBox");
+  box.innerHTML = "";
+  const card = (title, intro) => {
+    const c = el("div", null, "card");
+    c.appendChild(el("h2", title));
+    if (intro) c.appendChild(el("p", intro, "muted"));
+    box.appendChild(c);
+    return c;
+  };
+  const list = (c, items) => { const ul = el("ul"); items.forEach(t => ul.appendChild(el("li", t))); c.appendChild(ul); };
+  const qa = (c, items) => items.forEach(x => {
+    const d = el("details");
+    d.appendChild(el("summary", x.q));
+    d.appendChild(el("p", x.a));
+    c.appendChild(d);
+  });
+  let c = card("What to expect: interview rounds for " + ROLES[id].n);
+  list(c, G.rounds);
+  c = card("Topics to revise before the interview");
+  list(c, G.topics);
+  c = card("Questions with sample answers", "Tap a question to see a sample answer. Use it as a model and add your own experience. Do not memorise it word for word.");
+  qa(c, G.qa);
+  c = card("Common questions for every role", "Replace the text in [brackets] with your own details.");
+  qa(c, UNI.qa);
+  c = card("The STAR method");
+  list(c, UNI.star);
+  const d = el("details");
+  d.appendChild(el("summary", "See an example"));
+  d.appendChild(el("p", UNI.starEx));
+  c.appendChild(d);
+  c = card("Questions you can ask the interviewer");
+  list(c, UNI.ask);
+  c = card("Do");
+  list(c, UNI.dos);
+  c = card("Don’t");
+  list(c, UNI.donts);
+  c = card("Day-before checklist");
+  list(c, UNI.day);
+}
+
+/* ---------- preparation page ---------- */
+function fillList(id, items){
+  const ul = $(id); ul.innerHTML = "";
+  items.forEach(t => ul.appendChild(el("li", t)));
+}
+function drawPrep(){
+  drawGuide();
+  const R = ROLES[$("prepRole").value];
+  const co = $("prepCo"); co.innerHTML = "";
+  R.cos.forEach(c => {
+    const d = el("div", null, "pq");
+    d.appendChild(el("b", c.n));
+    const ul = el("ul");
+    c.qs.forEach(q => ul.appendChild(el("li", q)));
+    d.appendChild(ul);
+    co.appendChild(d);
+  });
+  const box = $("prepQs"); box.innerHTML = "";
+  R.qs.forEach(x => {
+    const d = el("div", null, "pq");
+    d.appendChild(el("b", x.q));
+    d.appendChild(el("div", "How to answer: " + x.t, "t"));
+    box.appendChild(d);
+  });
+  fillList("pBefore", GENERAL.before);
+  fillList("pDuring", GENERAL.during.concat(R.tips));
+  fillList("pVoice", GENERAL.voice);
+}
+$("goPrep").onclick = () => { $("prepRole").value = $("role").value; drawPrep(); show("prep"); };
+$("prepBack").onclick = openDash;
+$("prepRole").onchange = drawPrep;
+
+/* ---------- report ---------- */
+function drawImprove(r){
+  const ul = $("rImprove"); ul.innerHTML = "";
+  const add = t => ul.appendChild(el("li", t));
+  const roleId = ROLES[r.role] ? r.role : "dev";
+  const skipped = r.results.filter(x => x.words < 5).length;
+  const short = r.results.filter(x => x.words >= 5 && x.words < 30).length;
+  if (skipped) add("You gave no real answer to " + skipped + " question(s). Even a short attempt is better than silence: start with one sentence, then add an example.");
+  if (short) add(short + " of your answers were short. Aim for at least 60 words: make your point, give one example, then state the result.");
+  r.results.filter(x => x.s < 6 && x.miss.length).slice(0, 3)
+    .forEach(x => add("Revisit “" + x.q + "”. Try to cover: " + x.miss.slice(0, 3).join(", ") + "."));
+  if (r.avg >= 7) add("Your answers were solid. Now work on speaking smoothly and concisely, and add numbers to your examples.");
+  ROLES[roleId].tips.forEach(add);
+  const rs = getRes();
+  if (rs) analyze(rs.text, roleId).tips.slice(0, 3).forEach(t => add("Resume: " + t));
+  add("Study the Prepare section for this role, retake the interview and compare your score on the dashboard graph.");
+}
+function showReport(r){
+  const R = ROLES[r.role] || ROLES.dev;
+  $("rMeta").textContent = R.n + " interview • " + new Date(r.ts).toLocaleString();
+  $("rScore").textContent = r.avg.toFixed(1) + " / 10";
+  let v = "Needs more practice. Structure each answer with a point, an example and a result.";
+  if (r.avg >= 7) v = "Strong performance. You are close to interview-ready.";
+  else if (r.avg >= 4) v = "A good base. Add more detail and specific examples.";
+  $("rVerdict").textContent = v;
+  const box = $("rList"); box.innerHTML = "";
+  r.results.forEach((x, i) => {
+    const d = el("div", null, "q");
+    d.appendChild(el("b", "Q" + (i+1) + ": " + x.s + "/10 – " + x.q));
+    let txt = x.words < 30 ? "Answer was short. Add more detail. " : "";
+    if (x.miss.length && x.s < 10) txt += "Consider mentioning: " + x.miss.slice(0,3).join(", ") + ".";
+    d.appendChild(el("div", txt || "Good answer.", "a"));
+    if (x.answer) d.appendChild(el("div", "You said: “" + x.answer + "”", "a"));
+    box.appendChild(d);
+  });
+  drawImprove(r);
+  show("report");
+}
+$("back").onclick = openDash;
+
+/* ---------- build questions from resume and role ---------- */
+function buildQuestions(roleId, rs){
+  const R = ROLES[roleId], l = rs.text.toLowerCase(), a = analyze(rs.text, roleId);
+  const out = [{q:"Please walk me through your resume and tell me why you are applying for the " + R.n + " role.", kw:["experience","project","skills","role","learn","goal"]}];
+  shuffle(a.found).slice(0, 2).forEach(s => out.push({q:"Your resume mentions " + s + ". Tell me about a time you used it and what you achieved.", kw:[s,"used","project","problem","result","learned"]}));
+  if (/intern/.test(l)) out.push({q:"You have internship experience. What was your main responsibility and what did you learn?", kw:["responsib","team","learned","task","result","mentor"]});
+  else if (/project/.test(l)) out.push({q:"Pick the project on your resume you are proudest of. What was your role and the result?", kw:["role","built","team","problem","result","technology"]});
+  shuffle(R.qs).slice(0, 3).forEach(x => out.push(x));
+  return out;
+}
+
+/* ---------- interview engine (voice only) ---------- */
+let run = 0, list = [], idx = 0, results = [], role = "dev";
+let acc = "", cur = "", followed = false, tid = null, timeLeft = 0;
+let rec = null, wantListen = false, silenceTimer = null, inInterview = false, paused = false;
+const setStat = t => { $("stat").textContent = t; };
+const setAvatar = c => { $("avatar").className = "avatar" + (c ? " " + c : ""); };
+
+function say(text, done){
+  const rid = run;
+  $("qtext").textContent = text;
+  let finished = false, fb;
+  const end = () => {
+    if (finished) return;
+    finished = true; clearTimeout(fb);
+    setAvatar(""); setStat("");
+    if (rid === run && done) done();
+  };
+  if (!("speechSynthesis" in window)){ fb = setTimeout(end, 1500); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US"; u.rate = 0.95;
+  u.onend = end; u.onerror = end;
+  fb = setTimeout(end, 4000 + text.length * 110);
+  setAvatar("speaking"); setStat("Interviewer is speaking…");
+  speechSynthesis.speak(u);
+}
+function startListening(){ wantListen = true; openRec(); setAvatar("listening"); setStat("Listening… speak your answer"); }
+function openRec(){
+  const base = cur;
+  rec = new SR();
+  rec.lang = "en-IN";   /* use "en-US" if you prefer */
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.onresult = e => {
+    let fin = "", interim = "";
+    for (let i = 0; i < e.results.length; i++){
+      const tr = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += tr + " "; else interim += tr;
+    }
+    cur = (base + " " + fin + interim).trim();
+    $("live").textContent = cur;
+    resetSilence();
+  };
+  rec.onend = () => { if (wantListen) setTimeout(openRec, 150); };
+  rec.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed"){
+      wantListen = false; setAvatar("");
+      setStat("Microphone is blocked. Allow it in the browser address bar, then end and restart.");
+    }
+  };
+  try { rec.start(); } catch(err){}
+}
+function stopListening(){
+  wantListen = false;
+  clearTimeout(silenceTimer);
+  if (rec){ rec.onend = null; try { rec.abort(); } catch(err){} rec = null; }
+}
+function resetSilence(){
+  clearTimeout(silenceTimer);
+  silenceTimer = setTimeout(() => { if (wantListen && cur.trim()) submit(false); }, SILENCE_MS);
+}
+function startTimer(sec){
+  clearInterval(tid);
+  timeLeft = sec; showTime();
+  tid = setInterval(() => { timeLeft--; showTime(); if (timeLeft <= 0){ clearInterval(tid); submit(true); } }, 1000);
+}
+function showTime(){
+  const t = $("timer");
+  t.textContent = "Time left: " + timeLeft + "s";
+  t.className = timeLeft <= 15 ? "low" : "";
+}
+function beginAnswer(sec){
+  cur = ""; $("live").textContent = "";
+  $("done").disabled = false;
+  startTimer(sec);
+  startListening();
+}
+function ask(){
+  acc = ""; followed = false;
+  $("timer").textContent = "";
+  $("progress").textContent = "Question " + (idx + 1) + " of " + list.length;
+  say("Question " + (idx + 1) + ". " + list[idx].q, () => beginAnswer(TIME_LIMIT));
+}
+function submit(auto){
+  if (!inInterview || paused) return;
+  const text = cur.trim();
+  if (!auto && !text){ setStat("Say your answer first, then press the button."); return; }
+  stopListening();
+  clearInterval(tid);
+  $("done").disabled = true;
+  $("live").textContent = "";
+  acc = (acc + " " + text).trim();
+  const words = acc ? acc.split(/\s+/).length : 0;
+  if (!auto && !followed && words < 25){
+    followed = true;
+    say("Could you elaborate? A specific example would help.", () => beginAnswer(FOLLOW_TIME));
+    return;
+  }
+  results.push(evaluate(acc, list[idx]));
+  say(auto && !acc ? "No problem, let’s move on." : ACKS[Math.floor(Math.random() * ACKS.length)], () => {
+    idx++;
+    if (idx < list.length) ask(); else finish();
+  });
+}
+function evaluate(text, item){
+  const t = text.toLowerCase();
+  const words = t ? t.split(/\s+/).length : 0;
+  if (words < 5) return {q:item.q, s:0, miss:item.kw, words, answer:text};
+  const hits = item.kw.filter(k => t.includes(k));
+  const miss = item.kw.filter(k => !t.includes(k));
+  const s = Math.round(Math.min(words / 60, 1) * 4 + (hits.length / item.kw.length) * 6);
+  return {q:item.q, s, miss, words, answer:text};
+}
+function reset(){
+  run++;
+  inInterview = false; paused = false;
+  stopListening();
+  clearInterval(tid);
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  $("fsgate").hidden = true;
+}
+function leaveFullscreen(){
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+function finish(){
+  const avg = results.reduce((a, r) => a + r.s, 0) / results.length;
+  const saved = {id: Date.now(), ts: Date.now(), role, avg, results};
+  const ivs = getIvs(); ivs.push(saved); store.set(ivKey(), ivs);
+  say("That’s the end of the interview. Thank you for your time. Your overall score is " + avg.toFixed(1) + " out of 10.", () => {
+    reset(); leaveFullscreen(); showReport(saved);
+  });
+}
+function startInterview(){
+  const rs = getRes();
+  if (!rs){ openResume(); rmsg("Upload and save your resume first. Your interview questions are based on it.", true); return; }
+  role = $("role").value;
+  list = buildQuestions(role, rs); idx = 0; results = [];
+  run++;
+  inInterview = true; paused = false;
+  show("interview");
+  $("qtext").textContent = ""; $("live").textContent = ""; $("timer").textContent = "";
+  $("progress").textContent = "Starting…";
+  const f = $("interview");
+  if (f.requestFullscreen) f.requestFullscreen().catch(() => {});
+  say("Hello, and thank you for joining. I’ve read your resume. I’ll ask you " + list.length + " questions for the " + ROLES[role].n + " role. You have " + TIME_LIMIT + " seconds for each. Let’s begin.", ask);
+}
+function endEarly(){
+  if (!confirm("End this interview? It will not be saved.")) return;
+  reset(); leaveFullscreen(); openDash();
+}
+document.addEventListener("fullscreenchange", () => {
+  if (inInterview && !document.fullscreenElement){
+    paused = true; run++;
+    stopListening(); clearInterval(tid);
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    setAvatar(""); setStat("");
+    $("fsgate").hidden = false;
+  }
+});
+$("resume").onclick = () => {
+  const f = $("interview");
+  const go = () => { paused = false; $("fsgate").hidden = true; results.length = Math.min(results.length, idx); ask(); };
+  if (f.requestFullscreen) f.requestFullscreen().then(go).catch(go); else go();
+};
+$("quit").onclick = () => { reset(); openDash(); };
+$("start").onclick = startInterview;
+$("done").onclick = () => submit(false);
+$("end").onclick = endEarly;
+
+/* ---------- boot ---------- */
+const sess = store.get("mis_session", null);
+if (sess && sess.email){ me = sess; openDash(); } else show("auth");
+</script>
+</body>
+</html>
